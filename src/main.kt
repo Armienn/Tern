@@ -1,7 +1,7 @@
 import org.w3c.dom.*
 import kotlin.browser.document
 
-fun main(args: Array<String>) {
+fun main() {
 	val header = document.getElementById("header") as HTMLElement
 	val navigation = document.getElementById("navigation") as HTMLElement
 	val playerArea = document.getElementById("player-area") as HTMLElement
@@ -12,6 +12,7 @@ fun main(args: Array<String>) {
 	header.textContent = "Select a game"
 
 	addButton(AlysDisplay(canvasContainer, playerArea, gameAreaTop, gameAreaRight), "Alys", navigation, header)
+	addButton(EldremDisplay(canvasContainer, playerArea, gameAreaTop, gameAreaRight), "Eldrem", navigation, header)
 	addButton(ChessDisplay(canvasContainer, playerArea, gameAreaTop, gameAreaRight), "Chess", navigation, header)
 	addButton(VirusDisplay(canvasContainer, playerArea, gameAreaTop, gameAreaRight), "Virus", navigation, header)
 	addButton(TicTacToeDisplay(canvasContainer, playerArea, gameAreaTop, gameAreaRight), "Tic Tac Toe", navigation, header)
