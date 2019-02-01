@@ -8,10 +8,8 @@ class TicTacToe(override var state: TicTacToeState = TicTacToeState())
 	override val actionTypes = listOf(
 			ActionType("place piece",
 					{ _, _ -> true },
-					{ oldState: TicTacToeState, action: TicTacToeAction, newState: TicTacToeState ->
-						Success(StandardStateActionState(oldState, action, newState))
-					},
-					listOf<ActionStep<TicTacToeSas>>(
+					{ _: TicTacToeState, action: TicTacToeAction -> Success(action)},
+					listOf<ActionStep<TicTacToeState, TicTacToeAction>>(
 							TicTacToeSas::mustPlaceOwnPiece,
 							TicTacToeSas::placePiece,
 							TicTacToeSas::switchPlayer
@@ -20,7 +18,7 @@ class TicTacToe(override var state: TicTacToeState = TicTacToeState())
 	)
 }
 
-private typealias TicTacToeSas = StandardStateActionState<TicTacToeState, TicTacToeAction>
+private typealias TicTacToeSas = StateActionState<TicTacToeState, TicTacToeAction>
 
 fun TicTacToeSas.mustPlaceOwnPiece() =
 		Result.check("must place own piece", action.piece == oldState.currentPlayer)

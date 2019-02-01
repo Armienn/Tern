@@ -40,7 +40,9 @@ data class ChessState(
 				if (piece?.player != currentPlayer)
 					continue
 				actions.addAll(piece.possibleMoves(board, Position(i, j)). filter {
-					val sas = ChessSas.readyAction(this, it, Chess(this).copyState()).onFailure { return@filter true }
+					val newState = Chess(this).copyState()
+					val actionThing = ChessActionMove.readyAction(this, it).onFailure { return@filter true }
+					val sas = StateActionState(this, actionThing, newState)
 					sas.movePiece()
 					return@filter sas.kingMustNotBeInCheck() is Success
 				})

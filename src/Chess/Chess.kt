@@ -10,8 +10,8 @@ class Chess(override var state: ChessState = ChessState())
 	override val actionTypes = listOf(
 			ActionType("move piece",
 					{ _, _ -> true },
-					ChessSas.Companion::readyAction,
-					listOf<ActionStep<ChessSas>>(
+					ChessActionMove.Companion::readyAction,
+					listOf<ActionStep<ChessState, ChessActionMove>>(
 							ChessSas::originMustBeCurrentPlayer,
 							ChessSas::destinationMustBeEmptyOrEnemy,
 							ChessSas::moveMustBeLegal,
@@ -23,22 +23,24 @@ class Chess(override var state: ChessState = ChessState())
 	)
 }
 
-fun ChessSas.originMustBeCurrentPlayer() =
-		Result.check("must move own piece", piece.player == oldState.currentPlayer)
+private fun ChessSas.originMustBeCurrentPlayer() = with(action) {
+	Result.check("must move own piece", piece.player == oldState.currentPlayer)
+}
 
-fun ChessSas.destinationMustBeEmptyOrEnemy() =
-		Result.check("destination must be empty or enemy", destination.field == null || destination.field.player != oldState.currentPlayer)
+private fun ChessSas.destinationMustBeEmptyOrEnemy() = with(action) {
+	Result.check("destination must be empty or enemy", destination.field == null || destination.field.player != oldState.currentPlayer)
+}
 
-fun ChessSas.moveMustBeLegal() =
-		Result.check("move must be legal", piece.isLegal(oldState.board, action))
-
-fun ChessSas.kingMustNotBeInCheck(): Result<Any?> {
+private fun ChessSas.moveMustBeLegal() = with(action) {
+	Result.check("move must be legal", piece.isLegal(oldState.board, action))
+}
+internal fun ChessSas.kingMustNotBeInCheck(): Result<Any?> {
 	val index = newState.board.fields.indexOfFirst { it?.type == ChessPieceType.King && it.player == oldState.currentPlayer }
 	val position = Position(index % 8, index / 8)
 	return Result.check("king must not be in check", !ChessPiece.isInCheck(newState.board, position))
 }
 
-fun ChessSas.movePiece(): Result<Any?> {
+internal fun ChessSas.movePiece() = with(action) {
 	var newPiece = piece.copy(hasMoved = true)
 	if (newPiece.type == ChessPieceType.Pawn &&
 			((action.destination.y == 0 && newPiece.player == ChessPlayer.Black) ||
@@ -48,7 +50,7 @@ fun ChessSas.movePiece(): Result<Any?> {
 		moveCastlingRook(action, newState)
 	newState.board[action.destination] = newPiece
 	newState.board[action.origin] = null
-	return Result.success()
+	Result.success()
 }
 
 private fun moveCastlingRook(action: ChessAction, state: ChessState) {
@@ -61,27 +63,26 @@ private fun moveCastlingRook(action: ChessAction, state: ChessState) {
 	}
 }
 
-fun ChessSas.switchPlayer(): Result<Any?> {
+private fun ChessSas.switchPlayer(): Result<Any?> {
 	newState.currentPlayer = if (oldState.currentPlayer == ChessPlayer.White) ChessPlayer.Black else ChessPlayer.White
 	return Result.success()
 }
 
-class ChessSas(
+private typealias ChessSas = StateActionState<ChessState, ChessActionMove>
+
+class ChessActionMove(
 		val piece: ChessPiece,
 		val destination: PositionedField<ChessPiece?>,
-		val action: ChessAction,
-		oldState: ChessState,
-		newState: ChessState
-) : StateActionState<ChessState>(oldState, newState) {
+		val action: ChessAction
+)  {
 	companion object {
-		fun readyAction(oldState: ChessState, action: ChessAction, newState: ChessState): Result<ChessSas> {
+		fun readyAction(oldState: ChessState, action: ChessAction): Result<ChessActionMove> {
 			val originField = oldState.board[action.origin]
 					?: return Failure("must move a piece")
-			return Success(ChessSas(
+			return Success(ChessActionMove(
 					originField,
 					PositionedField(action.destination, oldState.board[action.destination]),
-					action,
-					oldState, newState))
+					action))
 		}
 	}
 }

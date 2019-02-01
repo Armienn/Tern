@@ -12,99 +12,99 @@ class Alys(override var state: AlysState = AlysState())
 					{ _, action ->
 						action is AlysCreateAction && action.type == AlysType.Fort
 					},
-					AlysSasBuild.Companion::readyAction,
-					listOf<ActionStep<AlysSasBuild>>(
-							AlysSasBuild::originMustBeCurrentPlayer,
-							AlysSasBuild::originAndDestinationMustBeDifferent,
-							AlysSasBuild::originAndDestinationMustConnected,
-							AlysSasBuild::destinationMustBeCurrentPlayer,
-							AlysSasBuild::destinationMustBeEmpty,
-							AlysSasBuild::subtractMoney,
-							AlysSasBuild::placePiece
+					BuildAction.Companion::readyAction,
+					listOf<ActionStep<AlysState, BuildAction>>(
+							AlysSas<BuildAction>::originMustBeCurrentPlayer,
+							AlysSas<BuildAction>::originAndDestinationMustBeDifferent,
+							AlysSas<BuildAction>::originAndDestinationMustConnected,
+							AlysSas<BuildAction>::destinationMustBeCurrentPlayer,
+							AlysSas<BuildAction>::destinationMustBeEmpty,
+							AlysSas<BuildAction>::subtractMoney,
+							AlysSas<BuildAction>::placePiece
 					)
 			),
 			ActionType("hire and move soldier",
 					{ state, action ->
 						action is AlysCreateAction && action.type == AlysType.Soldier && state.board[action.destination]?.player == state.currentPlayer
 					},
-					AlysSasHire.Companion::readyAction,
-					listOf<ActionStep<AlysSasHire>>(
-							AlysSasHire::originMustBeCurrentPlayer,
-							AlysSasHire::originAndDestinationMustBeDifferent,
-							AlysSasHire::originAndDestinationMustConnected,
-							AlysSasHire::subtractMoneyForSoldier,
-							AlysSasHire::destinationMustNotBeFortOrTown,
-							AlysSasMove::destinationMustNotBeFullyUpgradedSoldier,
-							AlysSasHire::placeOrUpgradePiece,
-							AlysSasMove::removeOriginalPiece
+					HireAction.Companion::readyAction,
+					listOf<ActionStep<AlysState, HireAction>>(
+							AlysSas<HireAction>::originMustBeCurrentPlayer,
+							AlysSas<HireAction>::originAndDestinationMustBeDifferent,
+							AlysSas<HireAction>::originAndDestinationMustConnected,
+							AlysSas<HireAction>::subtractMoneyForSoldier,
+							AlysSas<HireAction>::destinationMustNotBeFortOrTown,
+							AlysSas<HireAction>::destinationMustNotBeFullyUpgradedSoldier,
+							AlysSas<HireAction>::placeOrUpgradePiece,
+							AlysSas<HireAction>::removeOriginalPiece
 					)
 			),
 			ActionType("hire soldier and invade",
 					{ state, action ->
 						action is AlysCreateAction && action.type == AlysType.Soldier && state.board[action.destination]?.player != state.currentPlayer
 					},
-					AlysSasHire.Companion::readyAction,
-					listOf<ActionStep<AlysSasHire>>(
-							AlysSasHire::originMustBeCurrentPlayer,
-							AlysSasHire::originAndDestinationMustBeDifferent,
-							AlysSasHire::originAndDestinationMustConnected,
-							AlysSasHire::subtractMoneyForSoldier,
-							AlysSasMove::pieceMustBeStronger,
-							AlysSasMove::invadeDestination,
-							AlysSasMove::removeOriginalPiece,
-							AlysSasMove::fixSplitAreas,
-							AlysSasMove::fixMergedAreas
+					HireAction.Companion::readyAction,
+					listOf<ActionStep<AlysState, HireAction>>(
+							AlysSas<HireAction>::originMustBeCurrentPlayer,
+							AlysSas<HireAction>::originAndDestinationMustBeDifferent,
+							AlysSas<HireAction>::originAndDestinationMustConnected,
+							AlysSas<HireAction>::subtractMoneyForSoldier,
+							AlysSas<HireAction>::pieceMustBeStronger,
+							AlysSas<HireAction>::invadeDestination,
+							AlysSas<HireAction>::removeOriginalPiece,
+							AlysSas<HireAction>::fixSplitAreas,
+							AlysSas<HireAction>::fixMergedAreas
 					)
 			),
 			ActionType("move soldier",
 					{ state, action ->
 						action is AlysMoveAction && state.board[action.destination]?.player == state.currentPlayer
 					},
-					AlysSasMove.Companion::readyAction,
-					listOf<ActionStep<AlysSasMove>>(
-							AlysSasMove::originMustBeCurrentPlayer,
-							AlysSasMove::originAndDestinationMustBeDifferent,
-							AlysSasMove::originAndDestinationMustConnected,
-							AlysSasMove::pieceMustBeSoldier,
-							AlysSasMove::pieceMustNotHaveMoved,
-							AlysSasMove::destinationMustNotBeFortOrTown,
-							AlysSasMove::destinationMustNotBeFullyUpgradedSoldier,
-							AlysSasMove::placeOrUpgradePiece,
-							AlysSasMove::removeOriginalPiece
+					MoveAction.Companion::readyAction,
+					listOf<ActionStep<AlysState, MoveAction>>(
+							AlysSas<MoveAction>::originMustBeCurrentPlayer,
+							AlysSas<MoveAction>::originAndDestinationMustBeDifferent,
+							AlysSas<MoveAction>::originAndDestinationMustConnected,
+							AlysSas<MoveAction>::pieceMustBeSoldier,
+							AlysSas<MoveAction>::pieceMustNotHaveMoved,
+							AlysSas<MoveAction>::destinationMustNotBeFortOrTown,
+							AlysSas<MoveAction>::destinationMustNotBeFullyUpgradedSoldier,
+							AlysSas<MoveAction>::placeOrUpgradePiece,
+							AlysSas<MoveAction>::removeOriginalPiece
 					)
 			),
 			ActionType("invade",
 					{ state, action ->
 						action is AlysMoveAction && state.board[action.destination]?.player != state.currentPlayer
 					},
-					AlysSasMove.Companion::readyAction,
-					listOf<ActionStep<AlysSasMove>>(
-							AlysSasMove::originMustBeCurrentPlayer,
-							AlysSasMove::originAndDestinationMustBeDifferent,
-							AlysSasMove::originAndDestinationMustConnected,
-							AlysSasMove::pieceMustBeSoldier,
-							AlysSasMove::pieceMustNotHaveMoved,
-							AlysSasMove::pieceMustBeStronger,
-							AlysSasMove::invadeDestination,
-							AlysSasMove::removeOriginalPiece,
-							AlysSasMove::fixSplitAreas,
-							AlysSasMove::fixMergedAreas
+					MoveAction.Companion::readyAction,
+					listOf<ActionStep<AlysState, MoveAction>>(
+							AlysSas<MoveAction>::originMustBeCurrentPlayer,
+							AlysSas<MoveAction>::originAndDestinationMustBeDifferent,
+							AlysSas<MoveAction>::originAndDestinationMustConnected,
+							AlysSas<MoveAction>::pieceMustBeSoldier,
+							AlysSas<MoveAction>::pieceMustNotHaveMoved,
+							AlysSas<MoveAction>::pieceMustBeStronger,
+							AlysSas<MoveAction>::invadeDestination,
+							AlysSas<MoveAction>::removeOriginalPiece,
+							AlysSas<MoveAction>::fixSplitAreas,
+							AlysSas<MoveAction>::fixMergedAreas
 					)
 			),
 			ActionType("end turn",
 					{ _, action ->
 						action is AlysEndTurnAction
 					},
-					AlysSasEnd.Companion::readyAction,
-					listOf<ActionStep<AlysSasEnd>>(
-							AlysSasEnd::changeCurrentPlayer,
-							AlysSasEnd::incrementRound,
-							AlysSasEnd::gainIncome,
-							AlysSasEnd::spreadTrees,
-							AlysSasEnd::spreadCoastTrees,
-							AlysSasEnd::overgrowGraves,
-							AlysSasEnd::killLoneSoldiers,
-							AlysSasEnd::subtractUpkeep
+					EndAction.Companion::readyAction,
+					listOf<ActionStep<AlysState, EndAction>>(
+							AlysSas<EndAction>::changeCurrentPlayer,
+							AlysSas<EndAction>::incrementRound,
+							AlysSas<EndAction>::gainIncome,
+							AlysSas<EndAction>::spreadTrees,
+							AlysSas<EndAction>::spreadCoastTrees,
+							AlysSas<EndAction>::overgrowGraves,
+							AlysSas<EndAction>::killLoneSoldiers,
+							AlysSas<EndAction>::subtractUpkeep
 					)
 			)
 	)
@@ -143,37 +143,47 @@ class Alys(override var state: AlysState = AlysState())
 	}
 }
 
-fun <T : AlysSasStandard> T.originAndDestinationMustBeDifferent() =
+private fun <A : StandardAction> AlysSas<A>.originAndDestinationMustBeDifferent() = with(action) {
 		Result.check("origin and destination must be different", origin.position != destination.position)
+}
 
-fun <T : AlysSasStandard> T.originAndDestinationMustConnected() =
+private fun <A : StandardAction> AlysSas<A>.originAndDestinationMustConnected() = with(action) {
 		Result.check("origin and destination must connected", oldState.isConnected(origin.position, destination.position))
+}
 
-fun <T : AlysSasStandard> T.originMustBeCurrentPlayer() =
+private fun <A : StandardAction> AlysSas<A>.originMustBeCurrentPlayer() = with(action) {
 		Result.check("origin must be current player", origin.field.player == oldState.currentPlayer)
+}
 
-fun <T : AlysSasStandard> T.destinationMustBeCurrentPlayer() =
+private fun <A : StandardAction> AlysSas<A>.destinationMustBeCurrentPlayer() = with(action) {
 		Result.check("destination must be current player", destination.field.player == oldState.currentPlayer)
+}
 
-fun <T : AlysSasStandard> T.destinationMustBeEmpty() =
+private fun <A : StandardAction> AlysSas<A>.destinationMustBeEmpty() = with(action) {
 		Result.check("destination must be empty", destination.field.piece == null && destination.field.treasury == null)
+}
 
-fun <T : AlysSasStandard> T.destinationMustNotBeFortOrTown() =
+private fun <A : StandardAction> AlysSas<A>.destinationMustNotBeFortOrTown() = with(action) {
 		Result.check("destination must not be fort or town", destination.field.piece?.type != AlysType.Fort && destination.field.treasury == null)
+}
 
-fun <T : AlysSasStandard> T.destinationMustNotBeFullyUpgradedSoldier() =
+private fun <A : StandardAction> AlysSas<A>.destinationMustNotBeFullyUpgradedSoldier() = with(action) {
 		Result.check("destination must not be fully upgraded soldier", !(destination.field.piece?.type == AlysType.Soldier && destination.field.piece.strength == 4))
+}
 
-fun AlysSasMove.pieceMustNotHaveMoved() =
+private fun <A : MoveAction> AlysSas<A>.pieceMustNotHaveMoved() =with(action) {
 		Result.check("piece must not have moved", !piece.hasMoved)
+}
 
-fun AlysSasMove.pieceMustBeSoldier() =
+private fun <A : MoveAction> AlysSas<A>.pieceMustBeSoldier() =with(action) {
 		Result.check("piece must be soldier", piece.type == AlysType.Soldier)
+}
 
-fun AlysSasMove.pieceMustBeStronger() =
-		Result.check("piece must be stronger", piece.strength > oldState.totalDefenseOf(destination))
+private fun <A : MoveAction> AlysSas<A>.pieceMustBeStronger() = with(action) {
+	Result.check("piece must be stronger", piece.strength > oldState.totalDefenseOf(destination))
+}
 
-fun AlysSasMove.placeOrUpgradePiece(): Result<Any?> {
+private fun <A : MoveAction> AlysSas<A>.placeOrUpgradePiece() = with(action) {
 	val destinationPiece = destination.field.piece
 	when {
 		destinationPiece == null ->
@@ -184,20 +194,20 @@ fun AlysSasMove.placeOrUpgradePiece(): Result<Any?> {
 		else ->
 			newState.board[destination.position] = destination.field.copy(piece = piece.copy(hasMoved = true))
 	}
-	return Result.success()
+	Result.success()
 }
 
-fun AlysSasMove.removeOriginalPiece(): Result<Any?> {
+private fun <A : MoveAction> AlysSas<A>.removeOriginalPiece() = with(action) {
 	newState.board[origin.position] = newState.board[origin.position]?.copy(piece = null)
-	return Result.success()
+	Result.success()
 }
 
-fun AlysSasMove.invadeDestination(): Result<Any?> {
+private fun <A : MoveAction> AlysSas<A>.invadeDestination() = with(action) {
 	newState.board[destination.position] = AlysField(oldState.currentPlayer, piece.copy(hasMoved = true))
-	return Result.success()
+	Result.success()
 }
 
-fun AlysSasMove.fixSplitAreas(): Result<Any?> {
+private fun <A : MoveAction> AlysSas<A>.fixSplitAreas() = with(action) {
 	for (place in newState.adjacentFields(destination.position)) {
 		val area = newState.connectedPositions(place.position)
 		if (area.size == 1) {
@@ -210,59 +220,59 @@ fun AlysSasMove.fixSplitAreas(): Result<Any?> {
 		val newBase = if (emptyArea.isEmpty()) area.random() else emptyArea.random()
 		newState.board[newBase.position] = AlysField(newBase.field.player, treasury = 0)
 	}
-	return Result.success()
+	Result.success()
 }
 
-fun AlysSasMove.fixMergedAreas(): Result<Any?> {
+private fun <A : MoveAction> AlysSas<A>.fixMergedAreas() = with(action) {
 	val area = newState.connectedPositions(destination.position)
 	val bases = area.filter { it.field.treasury != null }
 	val treasury = bases.sumBy { it.field.treasury ?: 0 }
-	val biggestBase = bases.maxBy { it.field.treasury ?: 0 } ?: return Failure("There was no base? This shouldn't happen")
+	val biggestBase = bases.maxBy { it.field.treasury ?: 0 } ?: return@with Failure<Any?>("There was no base? This shouldn't happen")
 	for (base in bases)
 		newState.board[base.position] = base.field.copy(treasury = null)
 	newState.board[biggestBase.position] = biggestBase.field.copy(treasury = treasury)
-	return Result.success()
+	Result.success()
 }
 
-fun AlysSasBuild.subtractMoney(): Result<Any?> {
+private fun AlysSas<BuildAction>.subtractMoney() = with(action) {
 	if (treasury < Alys.priceOf(type))
-		return Failure("not enough money")
+		return@with Failure<Any?>("not enough money")
 	newState.board[origin.position] = origin.field.copy(treasury = treasury - Alys.priceOf(type))
-	return Result.success()
+	Result.success()
 }
 
-fun AlysSasHire.subtractMoneyForSoldier(): Result<Any?> {
+private fun AlysSas<HireAction>.subtractMoneyForSoldier() = with(action) {
 	if (treasury < Alys.priceOf(AlysType.Soldier))
-		return Failure("not enough money")
+		return@with Failure<Any?>("not enough money")
 	newState.board[origin.position] = origin.field.copy(treasury = treasury - Alys.priceOf(AlysType.Soldier))
-	return Result.success()
+	Result.success()
 }
 
-fun AlysSasBuild.placePiece(): Result<Any?> {
+private fun AlysSas<BuildAction>.placePiece() = with(action) {
 	newState.board[destination.position] = destination.field.copy(piece = AlysPiece(type))
-	return Result.success()
+	Result.success()
 }
 
-fun AlysSasEnd.changeCurrentPlayer(): Result<Any?> {
+private fun AlysSas<EndAction>.changeCurrentPlayer() = with(action) {
 	newState.currentPlayer = player
-	return Result.success()
+	Result.success()
 }
 
-fun AlysSasEnd.incrementRound(): Result<Any?> {
+private fun AlysSas<EndAction>.incrementRound(): Result<Any?> {
 	if (newState.currentPlayer < oldState.currentPlayer)
 		newState.round = oldState.round + 1
 	return Result.success()
 }
 
-fun AlysSasEnd.gainIncome(): Result<Any?> {
+private fun AlysSas<EndAction>.gainIncome() = with(action) {
 	for (base in bases) {
 		val treasury = (base.field.treasury as Int) + oldState.incomeFor(base.position)
 		newState.board[base.position] = base.field.copy(treasury = treasury)
 	}
-	return Result.success()
+	Result.success()
 }
 
-fun AlysSasEnd.spreadTrees(): Result<Any?> {
+private fun AlysSas<EndAction>.spreadTrees() = with(action) {
 	val newTrees = mutableListOf<Position>()
 	for (place in playerArea)
 		if (place.field.piece == null && place.field.treasury == null)
@@ -271,10 +281,10 @@ fun AlysSasEnd.spreadTrees(): Result<Any?> {
 				newTrees.add(place.position)
 	for (position in newTrees)
 		newState.board[position] = AlysField(player, AlysPiece(AlysType.Tree))
-	return Result.success()
+	Result.success()
 }
 
-fun AlysSasEnd.spreadCoastTrees(): Result<Any?> {
+private fun AlysSas<EndAction>.spreadCoastTrees() = with(action) {
 	val newTrees = mutableListOf<Position>()
 	for (place in playerArea)
 		if (place.field.piece == null && place.field.treasury == null) {
@@ -284,29 +294,29 @@ fun AlysSasEnd.spreadCoastTrees(): Result<Any?> {
 		}
 	for (position in newTrees)
 		newState.board[position] = AlysField(player, AlysPiece(AlysType.CoastTree))
-	return Result.success()
+	Result.success()
 }
 
-fun AlysSasEnd.overgrowGraves(): Result<Any?> {
+private fun AlysSas<EndAction>.overgrowGraves() = with(action) {
 	for (place in playerArea.filter { it.field.piece?.type == AlysType.Grave }) {
 		if (oldState.adjacentFields(place.position).size < 6)
 			newState.board[place.position] = AlysField(player, AlysPiece(AlysType.CoastTree))
 		else
 			newState.board[place.position] = AlysField(player, AlysPiece(AlysType.Tree))
 	}
-	return Result.success()
+	Result.success()
 }
 
-fun AlysSasEnd.killLoneSoldiers(): Result<Any?> {
+private fun AlysSas<EndAction>.killLoneSoldiers() = with(action) {
 	for (place in playerArea.filter {
 		it.field.piece?.type == AlysType.Soldier &&
 				oldState.adjacentFields(it.position).none { it.field.player == player }
 	})
 		newState.board[place.position] = AlysField(player, AlysPiece(AlysType.Grave))
-	return Result.success()
+	Result.success()
 }
 
-fun AlysSasEnd.subtractUpkeep(): Result<Any?> {
+private fun AlysSas<EndAction>.subtractUpkeep() = with(action) {
 	for (base in bases) {
 		val area = oldState.connectedPositions(base.position)
 		val treasury = (base.field.treasury as Int) + area.filter {
@@ -322,18 +332,18 @@ fun AlysSasEnd.subtractUpkeep(): Result<Any?> {
 			for (soldier in soldiers)
 				newState.board[soldier.position] = AlysField(player, AlysPiece(AlysType.Grave))
 	}
-	return Result.success()
+	Result.success()
 }
 
-class AlysSasEnd(
+private typealias AlysSas<T> = StateActionState<AlysState, T>
+
+private class EndAction (
 		val playerArea: List<PositionedField<AlysField>>,
 		val bases: List<PositionedField<AlysField>>,
-		val player: Int,
-		oldState: AlysState,
-		newState: AlysState
-) : StateActionState<AlysState>(oldState, newState) {
+		val player: Int
+) {
 	companion object {
-		fun readyAction(oldState: AlysState, action: AlysAction, newState: AlysState): Result<AlysSasEnd> {
+		fun readyAction(oldState: AlysState, action: AlysAction): Result<EndAction> {
 			action as AlysEndTurnAction
 			var nextPlayer = oldState.currentPlayer + 1
 			if (nextPlayer > oldState.playerCount)
@@ -342,77 +352,77 @@ class AlysSasEnd(
 					.filter { it.field?.player == nextPlayer }
 					.map { PositionedField(it.position, it.field as AlysField) }
 			val bases = playerArea.filter { it.field.treasury != null }
-			return Success(AlysSasEnd(playerArea, bases, nextPlayer, oldState, newState))
+			return Success(EndAction(playerArea, bases, nextPlayer))
 		}
 	}
 }
 
-class AlysSasBuild(
+private class BuildAction(
 		val treasury: Int,
 		val type: AlysType,
-		base: AlysSasStandard) : AlysSasStandard(base) {
+		base: StandardAction
+) : StandardAction(base) {
 	companion object {
-		fun readyAction(oldState: AlysState, action: AlysAction, newState: AlysState): Result<AlysSasBuild> {
+		fun readyAction(oldState: AlysState, action: AlysAction): Result<BuildAction> {
 			action as AlysCreateAction
-			val base = AlysSasStandard.readyAction(oldState, action.origin, action.destination, newState).onFailure {
+			val base = StandardAction.readyAction(oldState, action.origin, action.destination).onFailure {
 				return Failure(it.error)
 			}
 			val treasury = base.origin.field.treasury
 					?: return Failure("origin isn't a base")
-			return Success(AlysSasBuild(treasury, action.type, base))
+			return Success(BuildAction(treasury, action.type, base))
 		}
 	}
 }
 
-class AlysSasHire(
+private class HireAction(
 		override val piece: AlysPiece,
 		val treasury: Int,
-		base: AlysSasStandard) : AlysSasMove(piece, base) {
+		base: StandardAction
+) : MoveAction(piece, base) {
 	companion object {
-		fun readyAction(oldState: AlysState, action: AlysAction, newState: AlysState): Result<AlysSasHire> {
+		fun readyAction(oldState: AlysState, action: AlysAction): Result<HireAction> {
 			action as AlysCreateAction
-			val base = AlysSasStandard.readyAction(oldState, action.origin, action.destination, newState).onFailure {
+			val base = StandardAction.readyAction(oldState, action.origin, action.destination).onFailure {
 				return Failure(it.error)
 			}
 			val treasury = base.origin.field.treasury
 					?: return Failure("origin isn't a base")
-			return Success(AlysSasHire(AlysPiece(AlysType.Soldier), treasury, base))
+			return Success(HireAction(AlysPiece(AlysType.Soldier), treasury, base))
 		}
 	}
 }
 
-open class AlysSasMove(
+private open class MoveAction(
 		open val piece: AlysPiece,
-		base: AlysSasStandard) : AlysSasStandard(base) {
+		base: StandardAction
+) : StandardAction(base) {
 	companion object {
-		fun readyAction(oldState: AlysState, action: AlysAction, newState: AlysState): Result<AlysSasMove> {
+		fun readyAction(oldState: AlysState, action: AlysAction): Result<MoveAction> {
 			action as AlysMoveAction
-			val base = AlysSasStandard.readyAction(oldState, action.origin, action.destination, newState).onFailure {
+			val base = StandardAction.readyAction(oldState, action.origin, action.destination).onFailure {
 				return Failure(it.error)
 			}
 			val piece = base.origin.field.piece
 					?: return Failure("origin doesn't have a piece")
-			return Success(AlysSasMove(piece, base))
+			return Success(MoveAction(piece, base))
 		}
 	}
 }
 
-open class AlysSasStandard(
+private open class StandardAction(
 		val origin: PositionedField<AlysField>,
-		val destination: PositionedField<AlysField>,
-		oldState: AlysState,
-		newState: AlysState
-) : StateActionState<AlysState>(oldState, newState) {
-
-	constructor(base: AlysSasStandard) : this(base.origin, base.destination, base.oldState, base.newState)
+		val destination: PositionedField<AlysField>
+) {
+	constructor(base: StandardAction) : this(base.origin, base.destination)
 
 	companion object {
-		fun readyAction(oldState: AlysState, origin: Position, destination: Position, newState: AlysState): Result<AlysSasStandard> {
+		fun readyAction(oldState: AlysState, origin: Position, destination: Position): Result<StandardAction> {
 			val originField = oldState.board[origin]
 					?: return Failure("origin is empty")
 			val destinationField = oldState.board[destination]
 					?: return Failure("destination is empty")
-			return Success(AlysSasStandard(PositionedField(origin, originField), PositionedField(destination, destinationField), oldState, newState))
+			return Success(StandardAction(PositionedField(origin, originField), PositionedField(destination, destinationField)))
 		}
 	}
 }

@@ -12,10 +12,8 @@ class Virus(override var state: VirusState = VirusState())
 	override val actionTypes = listOf(
 			ActionType("move piece",
 					{ _, _ -> true },
-					{ oldState: VirusState, action: VirusAction, newState: VirusState ->
-						Success(StandardStateActionState(oldState, action, newState))
-					},
-					listOf<ActionStep<VirusSas>>(
+					{ _: VirusState, action: VirusAction -> Success(action) },
+					listOf<ActionStep<VirusState, VirusAction>>(
 							VirusSas::originMustBeWithinBoard,
 							VirusSas::originMustBeCurrentPlayer,
 							VirusSas::destinationMustBeWithinBoard,
@@ -29,7 +27,7 @@ class Virus(override var state: VirusState = VirusState())
 	)
 }
 
-private typealias VirusSas = StandardStateActionState<VirusState, VirusAction>
+private typealias VirusSas = StateActionState<VirusState, VirusAction>
 
 fun VirusSas.destinationMustBeWithinBoard() =
 		Result.check("destination must be within board", oldState.board.isWithinBounds(action.destination))
@@ -47,10 +45,12 @@ fun VirusSas.mustNotMoveTooFar() =
 		Result.check("must not move too far", abs(action.origin.x - action.destination.x) <= 2 && abs(action.origin.y - action.destination.y) <= 2)
 
 fun VirusSas.movePiece(): Result<Any?> {
-	if (abs(action.origin.x - action.destination.x) > 1 || abs(action.origin.y - action.destination.y) > 1)
-		newState.board[action.origin.x, action.origin.y] = 0
-	newState.board[action.destination.x, action.destination.y] = oldState.currentPlayer
-	return Result.success()
+	with(action){
+		if (abs(origin.x - destination.x) > 1 || abs(origin.y - destination.y) > 1)
+			newState.board[origin.x, origin.y] = 0
+		newState.board[destination.x, destination.y] = oldState.currentPlayer
+		return Result.success()
+	}
 }
 
 fun VirusSas.turnNeighbours(): Result<Any?> {

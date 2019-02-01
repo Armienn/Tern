@@ -12,12 +12,12 @@ abstract class BoardGame<S : BoardGameState<T, A, P>, T, A, P> {
 
 	fun nextState(action: A): Result<S> {
 		val actionType = (actionTypes.find { it.shouldPerform(state, action) }
-				?: return Result.failure("Couldn't recognise action")) as ActionType<S, A, StateActionState<S>>
-		val newState = copyState()
-		val sas = actionType.readyAction(state, action, newState).onFailure {
+				?: return Result.failure("Couldn't recognise action")) as ActionType<S, A, StateActionState<S, *>>
+		val actionInfo = actionType.readyAction(state, action).onFailure {
 			return Result.failure("Couldn't ${actionType.description} - ${it.error}")
 		}
-		actionType.perform(sas).onFailure {
+		val newState = copyState()
+		actionType.perform(StateActionState(state, actionInfo, newState)).onFailure {
 			return Result.failure("Couldn't ${actionType.description} - ${it.error}")
 		}
 		return Success(newState)
@@ -36,21 +36,19 @@ interface BoardGameState<T, A, P> {
 	fun findWinner(): P?
 }
 
-open class StateActionState<S>(val oldState: S, val newState: S)
+class StateActionState<S, T>(val oldState: S, val action: T, val newState: S)
 
-open class StandardStateActionState<S, A>(oldState: S, val action: A, newState: S) : StateActionState<S>(oldState, newState)
+typealias ActionStep<S, T> = (StateActionState<S, T>) -> Result<Any?>
 
-typealias ActionStep<T> = T.() -> Result<Any?>
-
-class ActionType<S, A, T : StateActionState<S>>(
+class ActionType<S, A, T>(
 		val description: String,
 		val shouldPerform: (state: S, action: A) -> Boolean,
-		val readyAction: (state: S, action: A, newState: S) -> Result<T>,
-		val updateSteps: List<ActionStep<T>>
+		val readyAction: (state: S, action: A) -> Result<T>,
+		private val updateSteps: List<ActionStep<S, T>>
 ) {
-	fun perform(sas: T): Result<Any?> {
+	fun perform(sas: StateActionState<S, T>): Result<Any?> {
 		for (step in updateSteps)
-			sas.step().onFailure { return it }
+			step(sas).onFailure { return it }
 		return Result.success()
 	}
 }

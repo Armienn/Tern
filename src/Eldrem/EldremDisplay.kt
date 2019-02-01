@@ -15,7 +15,8 @@ class EldremDisplay(canvasContainer: HTMLElement, playerArea: HTMLElement, gameA
 	}
 	override val draw = { context: CanvasRenderingContext2D, fieldSize: Double, field: EldremField, _: Int, _: Int ->
 		val image = when (field.piece?.type) {
-			"asdf" -> "S" + (field.piece.player + 1)
+			EldremPieceType.Soldier -> "S" + (field.piece.player + 1)
+			EldremPieceType.Healer -> "S" + (field.piece.player + 1) + "R"
 			else -> null
 		}
 		if (image != null)
