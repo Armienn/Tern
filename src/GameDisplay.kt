@@ -5,10 +5,10 @@ import kotlin.browser.window
 import kotlin.math.min
 
 abstract class GameDisplay<G : BoardGame<S, T, A, P>, S : BoardGameState<T, A, P>, T, A, P>(
-		val canvasContainer: HTMLElement,
-		val playerArea: HTMLElement,
-		val gameAreaTop: HTMLElement,
-		val gameAreaRight: HTMLElement
+		private val canvasContainer: HTMLElement,
+		private val playerArea: HTMLElement,
+		private val gameAreaTop: HTMLElement,
+		private val gameAreaRight: HTMLElement
 ) {
 	abstract var game: G
 	val canvas = document.createElement("canvas") as HTMLCanvasElement
@@ -25,10 +25,12 @@ abstract class GameDisplay<G : BoardGame<S, T, A, P>, S : BoardGameState<T, A, P
 	val messageLine = document.createElement("div") as HTMLDivElement
 	var previousState: S? = null
 	var loopJop: Job? = null
+	val images = mutableMapOf<String, HTMLImageElement>()
 
-	abstract val getColor: ((T, x: Int, y: Int) -> String)?
-	abstract val draw: ((context: CanvasRenderingContext2D, fieldSize: Double, field: T, x: Int, y: Int) -> Unit)?
-
+	open val getColor: ((T, x: Int, y: Int) -> String)? = null
+	open val draw: ((context: CanvasRenderingContext2D, fieldSize: Double, field: T, x: Int, y: Int) -> Unit)? = null
+	open val onShowGame: (()->Unit)? = null
+	open val onCompleteAction: ((success: Boolean) -> Unit)? = null
 
 	init {
 		turnLine.className = "message-line"
@@ -83,9 +85,7 @@ abstract class GameDisplay<G : BoardGame<S, T, A, P>, S : BoardGameState<T, A, P
 		updatePlayerList()
 	}
 
-	open val onShowGame: (()->Unit)? = null
-
-	fun sizeCanvas(){
+	private fun sizeCanvas(){
 		val dpr = window.devicePixelRatio
 		val element = canvas.parentElement as HTMLElement
 		val styleSize = min(element.clientWidth, window.innerHeight - 40)
@@ -97,11 +97,29 @@ abstract class GameDisplay<G : BoardGame<S, T, A, P>, S : BoardGameState<T, A, P
 		val context: CanvasRenderingContext2D = canvas.getContext("2d") as CanvasRenderingContext2D
 		context.setTransform(1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
 		context.scale(dpr, dpr)
+		gridDisplay.updateHexagonStuff()
+	}
+
+	fun autoSize() {
+		val scale = window.devicePixelRatio
+		val size = ((canvas.width / scale - gridDisplay.outerBorder * 2) / (game.state.board.width + 1)).toInt()
+		gridDisplay.fieldSize = (if (size % 2 == 0) size - 1 else size).toDouble()
+		gridDisplay.updateHexagonStuff()
+	}
+
+	private fun addImage(name: String) {
+		images[name] = document.createElement("img") as HTMLImageElement
+		images[name]?.src = "assets/$name.png"
+	}
+
+	fun addImages(vararg names: String) {
+		for (name in names)
+			addImage(name)
 	}
 
 	abstract fun startNewGame()
 
-	suspend fun turnLoop(scope: CoroutineScope){
+	private suspend fun turnLoop(scope: CoroutineScope){
 		while(game.winner == null && scope.isActive){
 			val controller = game.currentPlayer()?.controller
 			if(controller == null){
@@ -138,8 +156,6 @@ abstract class GameDisplay<G : BoardGame<S, T, A, P>, S : BoardGameState<T, A, P
 		return true
 	}
 
-	open val onCompleteAction: ((success: Boolean) -> Unit)? = null
-
 	open fun updateDisplay() {
 		val winner = game.winner
 		if (winner != null) {
@@ -151,7 +167,7 @@ abstract class GameDisplay<G : BoardGame<S, T, A, P>, S : BoardGameState<T, A, P
 		gridDisplay.display(game.state.board, getColor, draw)
 	}
 
-	fun updatePlayerList() {
+	private fun updatePlayerList() {
 		playerList.innerHTML = ""
 		for (i in 0 until players.size) {
 			val player = players[i]
@@ -169,7 +185,7 @@ abstract class GameDisplay<G : BoardGame<S, T, A, P>, S : BoardGameState<T, A, P
 		}
 	}
 
-	fun setupTypeSelect(player: Player<S, A>, index: Int, element: HTMLSelectElement) {
+	private fun setupTypeSelect(player: Player<S, A>, index: Int, element: HTMLSelectElement) {
 		element.className = "player-type"
 		for (type in playerTypes) {
 			val option = document.createElement("option") as HTMLOptionElement
@@ -207,7 +223,7 @@ abstract class GameDisplay<G : BoardGame<S, T, A, P>, S : BoardGameState<T, A, P
 		}
 	}
 
-	fun setupNameInput(player: Player<S, A>, element: HTMLInputElement) {
+	private fun setupNameInput(player: Player<S, A>, element: HTMLInputElement) {
 		element.className = "player-name"
 		element.value = player.name
 		element.onchange = event@{
@@ -218,7 +234,7 @@ abstract class GameDisplay<G : BoardGame<S, T, A, P>, S : BoardGameState<T, A, P
 		}
 	}
 
-	fun setupColorInput(player: Player<S, A>, element: HTMLInputElement) {
+	private fun setupColorInput(player: Player<S, A>, element: HTMLInputElement) {
 		element.className = "player-color"
 		element.value = player.color
 		element.onchange = event@{

@@ -18,7 +18,6 @@ class AlysDisplay(canvasContainer: HTMLElement, playerArea: HTMLElement, gameAre
 	private val endTurnButton = document.createElement("button") as HTMLButtonElement
 	private val statusArea = document.createElement("div") as HTMLDivElement
 
-	private val images = mutableMapOf<String, HTMLImageElement>()
 
 	private val ruleArea = RuleArea("""Alys is a game about conquering an island.
 			|<img src="assets/B.png" /> <img src="assets/S1.png" />
@@ -118,35 +117,11 @@ class AlysDisplay(canvasContainer: HTMLElement, playerArea: HTMLElement, gameAre
 		}
 	}
 
-	private fun addImage(name: String) {
-		images[name] = document.createElement("img") as HTMLImageElement
-		images[name]?.src = "assets/$name.png"
-	}
-
-	private fun resize() {
-		val scale = window.devicePixelRatio
-		val size = (((canvas.width / scale - gridDisplay.outerBorder * 2) / game.state.width) - 1).toInt()
-		gridDisplay.fieldSize = (if (size % 2 == 0) size - 1 else size).toDouble()
-		gridDisplay.showHexagons()
-	}
-
 	init {
-		addImage("S1")
-		addImage("S1R")
-		addImage("S2")
-		addImage("S2R")
-		addImage("S3")
-		addImage("S3R")
-		addImage("S4")
-		addImage("S4R")
-		addImage("B")
-		addImage("BR")
-		addImage("F")
-		addImage("T")
-		addImage("C")
-		addImage("G")
+		addImages("S1", "S1R", "S2", "S2R", "S3", "S3R", "S4", "S4R", "B", "BR", "F", "T", "C", "G")
 
 		aiDelay = 100
+		gridDisplay.hexagonal = true
 		gridDisplay.gridColor = "#7df"
 		gridDisplay.outerBorder = 50.0
 		statusArea.className = "status-area"
@@ -193,15 +168,13 @@ class AlysDisplay(canvasContainer: HTMLElement, playerArea: HTMLElement, gameAre
 					if (sourceField?.piece?.type == AlysType.Soldier && destination?.treasury != null && destination.player == sourceField.player) {
 						selectField(it)
 						return@click
-					} else if (sourceField?.piece?.type == AlysType.Soldier){
+					} else if (sourceField?.piece?.type == AlysType.Soldier) {
 						val playerController = game.currentPlayer()?.controller as? HumanController ?: return@click
 						playerController.performAction(AlysMoveAction(origin, it))
-					}
-					else if (type != null){
+					} else if (type != null) {
 						val playerController = game.currentPlayer()?.controller as? HumanController ?: return@click
 						playerController.performAction(AlysCreateAction(type, origin, it))
-					}
-					else if (sourceField?.treasury != null) {
+					} else if (sourceField?.treasury != null) {
 						if (destination?.player == game.state.currentPlayer &&
 								(destination.treasury != null || destination.piece?.type == AlysType.Soldier)) {
 							selectField(it)
@@ -242,7 +215,7 @@ class AlysDisplay(canvasContainer: HTMLElement, playerArea: HTMLElement, gameAre
 		gameAreaTop.appendChild(endTurnButton)
 		gameAreaRight.appendChild(statusArea)
 		ruleArea.showRules(gameAreaRight)
-		resize()
+		autoSize()
 	}
 
 	override fun startNewGame() {

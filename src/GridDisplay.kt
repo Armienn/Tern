@@ -7,7 +7,7 @@ import kotlin.math.sqrt
 
 class GridDisplay(val canvas: HTMLCanvasElement) {
 	val context: CanvasRenderingContext2D = canvas.getContext("2d") as CanvasRenderingContext2D
-	private var hexagonal = false
+	var hexagonal = false
 	var fieldSize = 50.0
 	var gridThickness = 1.0
 	var gridColor = "black"
@@ -63,8 +63,7 @@ class GridDisplay(val canvas: HTMLCanvasElement) {
 		context.restore()
 	}
 
-	fun showHexagons() {
-		hexagonal = true
+	fun updateHexagonStuff() {
 		hexDeltaX = fieldSize + gridThickness
 		hexDeltaY = 3 * (fieldSize / (2 * sqrt(3.0))) + gridThickness / sqrt(3.0)
 		hexPath = createHexagonPath(false)
