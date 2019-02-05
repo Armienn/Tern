@@ -13,7 +13,7 @@ class EldremDisplay(canvasContainer: HTMLElement, playerArea: HTMLElement, gameA
 			EldremTerrain.Cliffs -> "grey"
 		}
 	}
-	override val draw = { context: CanvasRenderingContext2D, fieldSize: Double, field: EldremField, _: Int, _: Int ->
+	override val draw = { context: CanvasRenderingContext2D, fieldSize: Double, field: EldremField, x: Int, y: Int ->
 		val image = when (field.piece?.type) {
 			EldremPieceType.Soldier -> "S" + (field.piece.player + 1)
 			EldremPieceType.Healer -> "S" + (field.piece.player + 1) + "R"

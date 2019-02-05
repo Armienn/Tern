@@ -1,3 +1,6 @@
+import kotlin.math.abs
+import kotlin.math.max
+
 class Grid<F>(
 		val width: Int,
 		val height: Int,

@@ -13,6 +13,7 @@ class Eldrem(override var state: EldremState = EldremState())
 					EldremMoveAction.Companion::readyAction,
 					listOf<ActionStep<EldremState, EldremMoveAction>>(
 							EldremSas<EldremMoveAction>::mustPlaceOwnPiece,
+							EldremSas<EldremMoveAction>::mustNotMoveTooFar,
 							EldremSas<EldremMoveAction>::movePiece,
 							EldremSas<EldremMoveAction>::changePlayer
 					)
@@ -31,6 +32,10 @@ class Eldrem(override var state: EldremState = EldremState())
 
 fun EldremSas<EldremMoveAction>.mustPlaceOwnPiece() = with(action) {
 	Result.check("must place own piece", piece.player == oldState.currentPlayer)
+}
+
+fun EldremSas<EldremMoveAction>.mustNotMoveTooFar() = with(action) {
+	Result.check("must not move too far", origin.position.hexDistance(destination.position) <= Eldrem.statsFor(piece.type).movement)
 }
 
 fun EldremSas<EldremMoveAction>.movePiece() = with(action) {
@@ -73,7 +78,12 @@ class EldremMoveAction(
 
 data class EldremField(val terrain: EldremTerrain, val piece: EldremPiece?)
 enum class EldremTerrain { Plains, Cliffs }
-data class EldremPiece(val player: Int, val type: EldremPieceType, val remainingHealth: Int = Eldrem.statsFor(type).health)
+data class EldremPiece(
+		val player: Int,
+		val type: EldremPieceType,
+		val remainingHealth: Int = Eldrem.statsFor(type).health,
+		val hasMoved: Boolean = false,
+		val hasAttacked: Boolean = false)
 enum class EldremPieceType { Soldier, Healer }
 data class EldremPieceStats(val movement: Int, val health: Int, val strength: Int, val range: Int)
 
