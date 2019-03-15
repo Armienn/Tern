@@ -20,7 +20,7 @@ data class Position(val x: Int, val y: Int) {
 	fun manhattanDistance(destination: Position) =
 			abs(x - destination.x) + abs(y - destination.y)
 
-	fun dontremembernameDistance(destination: Position) =
+	fun chebychevDistance(destination: Position) =
 			max(abs(x - destination.x), abs(y - destination.y))
 
 	fun hexDistance(destination: Position): Int {
@@ -29,7 +29,7 @@ data class Position(val x: Int, val y: Int) {
 		val deltaX = a.x - b.x
 		val deltaY = a.y - b.y
 		if(deltaX * deltaY < 0)
-			return a.dontremembernameDistance(b)
+			return a.chebychevDistance(b)
 		return a.manhattanDistance(b)
 	}
 

@@ -12,10 +12,30 @@ class Eldrem(override var state: EldremState = EldremState())
 					},
 					EldremMoveAction.Companion::readyAction,
 					listOf<ActionStep<EldremState, EldremMoveAction>>(
-							EldremSas<EldremMoveAction>::mustPlaceOwnPiece,
+							EldremSas<EldremMoveAction>::mustUseOwnPiece,
 							EldremSas<EldremMoveAction>::mustNotMoveTooFar,
-							EldremSas<EldremMoveAction>::movePiece,
-							EldremSas<EldremMoveAction>::changePlayer
+							EldremSas<EldremMoveAction>::movePiece
+					)
+			),
+			ActionType("attack with piece",
+					{ _, action: EldremAction ->
+						action.actionType == EldremActionType.Attack
+					},
+					EldremAttackAction.Companion::readyAction,
+					listOf<ActionStep<EldremState, EldremAttackAction>>(
+							EldremSas<EldremAttackAction>::mustUseOwnPiece,
+							EldremSas<EldremAttackAction>::mustAttackOpponent,
+							EldremSas<EldremAttackAction>::mustAttackWithinRange,
+							EldremSas<EldremAttackAction>::movePiece
+					)
+			),
+			ActionType("end turn",
+					{ _, action: EldremAction ->
+						action.actionType == EldremActionType.EndTurn
+					},
+					EldremEndAction.Companion::readyAction,
+					listOf<ActionStep<EldremState, EldremEndAction>>(
+							EldremSas<EldremEndAction>::changePlayer
 					)
 			)
 	)
@@ -30,15 +50,23 @@ class Eldrem(override var state: EldremState = EldremState())
 	}
 }
 
-fun EldremSas<EldremMoveAction>.mustPlaceOwnPiece() = with(action) {
-	Result.check("must place own piece", piece.player == oldState.currentPlayer)
+private fun <A: EldremMoveAction> EldremSas<A>.mustUseOwnPiece() = with(action) {
+	Result.check("must use own piece", piece.player == oldState.currentPlayer)
 }
 
-fun EldremSas<EldremMoveAction>.mustNotMoveTooFar() = with(action) {
+private fun EldremSas<EldremAttackAction>.mustAttackOpponent() = with(action) {
+	Result.check("must use own piece", opponent.player != oldState.currentPlayer)
+}
+
+private fun <A: EldremMoveAction> EldremSas<A>.mustNotMoveTooFar() = with(action) {
 	Result.check("must not move too far", origin.position.hexDistance(destination.position) <= Eldrem.statsFor(piece.type).movement)
 }
 
-fun EldremSas<EldremMoveAction>.movePiece() = with(action) {
+private fun <A: EldremMoveAction> EldremSas<A>.mustAttackWithinRange() = with(action) {
+	Result.check("must attack within range", origin.position.hexDistance(destination.position) <= Eldrem.statsFor(piece.type).range)
+}
+
+private fun <A: EldremMoveAction> EldremSas<A>.movePiece() = with(action) {
 	if (destination.field.piece != null)
 		return@with Failure<Any?>("must place pieces on empty fields")
 	newState.board[destination.position] = destination.field.copy(piece = piece)
@@ -46,7 +74,7 @@ fun EldremSas<EldremMoveAction>.movePiece() = with(action) {
 	Result.success()
 }
 
-fun EldremSas<EldremMoveAction>.changePlayer() = with(action) {
+private fun EldremSas<EldremEndAction>.changePlayer() = with(action) {
 	var nextPlayer = oldState.currentPlayer + 1
 	if (nextPlayer >= oldState.playerCount)
 		nextPlayer = 0
@@ -56,7 +84,30 @@ fun EldremSas<EldremMoveAction>.changePlayer() = with(action) {
 
 private typealias EldremSas<T> = StateActionState<EldremState, T>
 
-class EldremMoveAction(
+class EldremAttackAction(
+		piece: EldremPiece,
+		val opponent: EldremPiece,
+		origin: PositionedField<EldremField>,
+		destination: PositionedField<EldremField>
+): EldremMoveAction(piece, origin, destination) {
+	companion object {
+		fun readyAction(oldState: EldremState, action: EldremAction): Result<EldremAttackAction> {
+			if (!oldState.board.isWithinBounds(action.origin))
+				return Failure("blabla")
+			if (!oldState.board.isWithinBounds(action.destination))
+				return Failure("blabla")
+			val piece = oldState.board[action.origin].piece
+					?: return Failure("origin doesn't have a piece")
+			val opponent = oldState.board[action.destination].piece
+					?: return Failure("destination doesn't have a piece")
+			return Success(EldremAttackAction(piece, opponent,
+					PositionedField(action.origin, oldState.board[action.origin]),
+					PositionedField(action.destination, oldState.board[action.destination])))
+		}
+	}
+}
+
+open class EldremMoveAction(
 		val piece: EldremPiece,
 		val origin: PositionedField<EldremField>,
 		val destination: PositionedField<EldremField>
@@ -75,6 +126,15 @@ class EldremMoveAction(
 		}
 	}
 }
+
+private class EldremEndAction {
+	companion object {
+		fun readyAction(oldState: EldremState, action: EldremAction): Result<EldremEndAction> {
+			return Success(EldremEndAction())
+		}
+	}
+}
+
 
 data class EldremField(val terrain: EldremTerrain, val piece: EldremPiece?)
 enum class EldremTerrain { Plains, Cliffs }
