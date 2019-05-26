@@ -12,7 +12,7 @@ fun main() {
 	header.textContent = "Select a game"
 
 	addButton(AlysDisplay(canvasContainer, playerArea, gameAreaTop, gameAreaRight), "Alys", navigation, header)
-	addButton(EldremDisplay(canvasContainer, playerArea, gameAreaTop, gameAreaRight), "Eldrem", navigation, header)
+	addButton(CustomDisplay(canvasContainer, playerArea, gameAreaTop, gameAreaRight), "Eldrem", navigation, header)
 	addButton(ChessDisplay(canvasContainer, playerArea, gameAreaTop, gameAreaRight), "Chess", navigation, header)
 	addButton(VirusDisplay(canvasContainer, playerArea, gameAreaTop, gameAreaRight), "Virus", navigation, header)
 	addButton(TicTacToeDisplay(canvasContainer, playerArea, gameAreaTop, gameAreaRight), "Tic Tac Toe", navigation, header)

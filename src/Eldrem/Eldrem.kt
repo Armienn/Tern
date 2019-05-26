@@ -10,33 +10,19 @@ class Eldrem(override var state: EldremState = EldremState())
 					{ _, action: EldremAction ->
 						action.actionType == EldremActionType.Move
 					},
-					EldremMoveAction.Companion::readyAction,
-					listOf<ActionStep<EldremState, EldremMoveAction>>(
-							EldremSas<EldremMoveAction>::mustUseOwnPiece,
-							EldremSas<EldremMoveAction>::mustNotMoveTooFar,
-							EldremSas<EldremMoveAction>::movePiece
-					)
+					::performMoveAction
 			),
 			ActionType("attack with piece",
 					{ _, action: EldremAction ->
 						action.actionType == EldremActionType.Attack
 					},
-					EldremAttackAction.Companion::readyAction,
-					listOf<ActionStep<EldremState, EldremAttackAction>>(
-							EldremSas<EldremAttackAction>::mustUseOwnPiece,
-							EldremSas<EldremAttackAction>::mustAttackOpponent,
-							EldremSas<EldremAttackAction>::mustAttackWithinRange,
-							EldremSas<EldremAttackAction>::movePiece
-					)
+					::performAttackAction
 			),
 			ActionType("end turn",
 					{ _, action: EldremAction ->
 						action.actionType == EldremActionType.EndTurn
 					},
-					EldremEndAction.Companion::readyAction,
-					listOf<ActionStep<EldremState, EldremEndAction>>(
-							EldremSas<EldremEndAction>::changePlayer
-					)
+					::performEndTurnAction
 			)
 	)
 
@@ -48,91 +34,69 @@ class Eldrem(override var state: EldremState = EldremState())
 
 		fun statsFor(type: EldremPieceType) = statsMap[type] ?: throw Exception("Non-existing piece type")
 	}
-}
+	private fun performMoveAction(oldState: EldremState, action: EldremAction, newState: EldremState): Result<*> {
+		val origin = prepareOrigin(action.origin, oldState.board).onFailure { return it }
+		val destination = prepareDestination(action.destination, oldState.board).onFailure { return it }
+		val piece = oldState.board[action.origin].piece ?: return Failure<Any>("origin must contain a piece")
+		Result.check("must use own piece",
+				piece.player == oldState.currentPlayer
+		).onFailure { return it }
+		Result.check("must not move too far",
+				origin.position.hexDistance(destination.position) <= Eldrem.statsFor(piece.type).movement
+		).onFailure { return it }
+		movePiece(newState, piece, origin, destination).onFailure { return it }
+		return Result.success()
+	}
 
-private fun <A: EldremMoveAction> EldremSas<A>.mustUseOwnPiece() = with(action) {
-	Result.check("must use own piece", piece.player == oldState.currentPlayer)
-}
+	private fun performAttackAction(oldState: EldremState, action: EldremAction, newState: EldremState): Result<*> {
+		val origin = prepareOrigin(action.origin, oldState.board).onFailure { return it }
+		val destination = prepareDestination(action.destination, oldState.board).onFailure { return it }
+		val piece = oldState.board[action.origin].piece ?: return Failure<Any>("origin must contain a piece")
+		val opponent = oldState.board[action.destination].piece ?: return Failure<Any>("destination must contain a piece")
+		Result.check("must use own piece",
+				piece.player == oldState.currentPlayer
+		).onFailure { return it }
+		Result.check("must use own piece",
+				opponent.player != oldState.currentPlayer
+		).onFailure { return it }
+		Result.check("must attack within range",
+				origin.position.hexDistance(destination.position) <= Eldrem.statsFor(piece.type).range
+		).onFailure { return it }
+		movePiece(newState, piece, origin, destination).onFailure { return it }
+		return Result.success()
+	}
 
-private fun EldremSas<EldremAttackAction>.mustAttackOpponent() = with(action) {
-	Result.check("must use own piece", opponent.player != oldState.currentPlayer)
-}
+	private fun performEndTurnAction(oldState: EldremState, action: EldremAction, newState: EldremState): Result<*> {
+		changePlayer(oldState, newState)
+		return Result.success()
+	}
 
-private fun <A: EldremMoveAction> EldremSas<A>.mustNotMoveTooFar() = with(action) {
-	Result.check("must not move too far", origin.position.hexDistance(destination.position) <= Eldrem.statsFor(piece.type).movement)
-}
+	private fun movePiece(newState: EldremState, piece: EldremPiece, origin: PositionedField<EldremField>, destination: PositionedField<EldremField>): Result<*> {
+		if (destination.field.piece != null)
+			return Failure<Any>("must place pieces on empty fields")
+		newState.board[destination.position] = destination.field.copy(piece = piece)
+		newState.board[origin.position] = origin.field.copy(piece = null)
+		return Result.success()
+	}
 
-private fun <A: EldremMoveAction> EldremSas<A>.mustAttackWithinRange() = with(action) {
-	Result.check("must attack within range", origin.position.hexDistance(destination.position) <= Eldrem.statsFor(piece.type).range)
-}
-
-private fun <A: EldremMoveAction> EldremSas<A>.movePiece() = with(action) {
-	if (destination.field.piece != null)
-		return@with Failure<Any?>("must place pieces on empty fields")
-	newState.board[destination.position] = destination.field.copy(piece = piece)
-	newState.board[origin.position] = origin.field.copy(piece = null)
-	Result.success()
-}
-
-private fun EldremSas<EldremEndAction>.changePlayer() = with(action) {
-	var nextPlayer = oldState.currentPlayer + 1
-	if (nextPlayer >= oldState.playerCount)
-		nextPlayer = 0
-	newState.currentPlayer = nextPlayer
-	Result.success()
-}
-
-private typealias EldremSas<T> = StateActionState<EldremState, T>
-
-class EldremAttackAction(
-		piece: EldremPiece,
-		val opponent: EldremPiece,
-		origin: PositionedField<EldremField>,
-		destination: PositionedField<EldremField>
-): EldremMoveAction(piece, origin, destination) {
-	companion object {
-		fun readyAction(oldState: EldremState, action: EldremAction): Result<EldremAttackAction> {
-			if (!oldState.board.isWithinBounds(action.origin))
-				return Failure("blabla")
-			if (!oldState.board.isWithinBounds(action.destination))
-				return Failure("blabla")
-			val piece = oldState.board[action.origin].piece
-					?: return Failure("origin doesn't have a piece")
-			val opponent = oldState.board[action.destination].piece
-					?: return Failure("destination doesn't have a piece")
-			return Success(EldremAttackAction(piece, opponent,
-					PositionedField(action.origin, oldState.board[action.origin]),
-					PositionedField(action.destination, oldState.board[action.destination])))
-		}
+	private fun changePlayer(oldState: EldremState, newState: EldremState) {
+		var nextPlayer = oldState.currentPlayer + 1
+		if (nextPlayer >= oldState.playerCount)
+			nextPlayer = 0
+		newState.currentPlayer = nextPlayer
 	}
 }
 
-open class EldremMoveAction(
-		val piece: EldremPiece,
-		val origin: PositionedField<EldremField>,
-		val destination: PositionedField<EldremField>
-) {
-	companion object {
-		fun readyAction(oldState: EldremState, action: EldremAction): Result<EldremMoveAction> {
-			if (!oldState.board.isWithinBounds(action.origin))
-				return Failure("blabla")
-			if (!oldState.board.isWithinBounds(action.destination))
-				return Failure("blabla")
-			val piece = oldState.board[action.origin].piece
-					?: return Failure("origin doesn't have a piece")
-			return Success(EldremMoveAction(piece,
-					PositionedField(action.origin, oldState.board[action.origin]),
-					PositionedField(action.destination, oldState.board[action.destination])))
-		}
-	}
-}
+fun <T> prepareOrigin(position: Position, board: Grid<T>) =
+		preparePosition("origin", position, board)
 
-private class EldremEndAction {
-	companion object {
-		fun readyAction(oldState: EldremState, action: EldremAction): Result<EldremEndAction> {
-			return Success(EldremEndAction())
-		}
-	}
+fun <T> prepareDestination(position: Position, board: Grid<T>) =
+		preparePosition("destination", position, board)
+
+fun <T> preparePosition(descriptor: String, position: Position, board: Grid<T>): Result<PositionedField<T>> {
+	if(!board.isWithinBounds(position))
+		return Failure("$descriptor must be within bounds")
+	return Success(PositionedField(position, board[position]))
 }
 
 
@@ -144,6 +108,7 @@ data class EldremPiece(
 		val remainingHealth: Int = Eldrem.statsFor(type).health,
 		val hasMoved: Boolean = false,
 		val hasAttacked: Boolean = false)
+
 enum class EldremPieceType { Soldier, Healer }
 data class EldremPieceStats(val movement: Int, val health: Int, val strength: Int, val range: Int)
 
